@@ -6,10 +6,11 @@ import (
 )
 
 func main() {
-	http.HandleFunc("/api/generate-creature", handleGenerateCreature)
+	mux := http.NewServeMux()
 
-	log.Println("Server starting on :8080")
-	if err := http.ListenAndServe(":8080", nil); err != nil {
-		log.Fatal(err)
-	}
+	mux.HandleFunc("/generate-creature", GenerateCreatureHandler)
+	mux.HandleFunc("/feed", FeedHandler)
+
+	log.Println("Backend started on :8080")
+	log.Fatal(http.ListenAndServe(":8080", withCORS(mux)))
 }

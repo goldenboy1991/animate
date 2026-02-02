@@ -2,69 +2,50 @@ package main
 
 import (
 	"encoding/json"
-	"fmt"
-	"io"
-	"log"
 	"net/http"
 )
 
-var cfAI *CloudflareAI
-
-func init() {
-	cfAI = NewCloudflareAI()
+type GenerateRequest struct {
+	Description string `json:"description"`
 }
 
-// GenerateCreatureRequest входящий запрос
-type GenerateCreatureRequest struct {
-	Description string `json:"description"` // "кот", "дракон"
-	BlobImage   string `json:"blobImage"`   // base64 кляксы (пока не используем)
+type GenerateResponse struct {
+	ImageURL string `json:"image_url"`
 }
 
-// GenerateCreatureResponse ответ
-type GenerateCreatureResponse struct {
-	ImageBase64 string `json:"imageBase64"`
-}
-
-func handleGenerateCreature(w http.ResponseWriter, r *http.Request) {
+func GenerateCreatureHandler(w http.ResponseWriter, r *http.Request) {
 	if r.Method != http.MethodPost {
-		http.Error(w, "Method not allowed", http.StatusMethodNotAllowed)
+		w.WriteHeader(http.StatusMethodNotAllowed)
 		return
 	}
 
-	body, err := io.ReadAll(r.Body)
-	if err != nil {
-		http.Error(w, "Bad request", http.StatusBadRequest)
-		return
-	}
-	defer r.Body.Close()
+	var req GenerateRequest
+	_ = json.NewDecoder(r.Body).Decode(&req)
 
-	var req GenerateCreatureRequest
-	if err := json.Unmarshal(body, &req); err != nil {
-		http.Error(w, "Invalid JSON", http.StatusBadRequest)
-		return
-	}
-
-	if req.Description == "" {
-		http.Error(w, "Description required", http.StatusBadRequest)
-		return
-	}
-
-	// Собираем промпт
-	prompt := fmt.Sprintf("A cute friendly %s character, cartoon style, colorful, digital art", req.Description)
-
-	log.Printf("Generating creature with prompt: %s", prompt)
-
-	imageBase64, err := cfAI.GenerateImage(prompt)
-	if err != nil {
-		log.Printf("Cloudflare error: %v", err)
-		http.Error(w, "Image generation failed", http.StatusInternalServerError)
-		return
-	}
-
-	resp := GenerateCreatureResponse{
-		ImageBase64: imageBase64,
+	// 🔥 ПОКА ЗАГЛУШКА
+	resp := GenerateResponse{
+		ImageURL: "https://placekitten.com/400/400",
 	}
 
 	w.Header().Set("Content-Type", "application/json")
 	json.NewEncoder(w).Encode(resp)
+}
+
+func FeedHandler(w http.ResponseWriter, r *http.Request) {
+	w.WriteHeader(http.StatusOK)
+	w.Write([]byte(`{"status":"fed"}`))
+}
+
+func withCORS(h http.Handler) http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Set("Access-Control-Allow-Origin", "*")
+		w.Header().Set("Access-Control-Allow-Headers", "Content-Type")
+		w.Header().Set("Access-Control-Allow-Methods", "POST, GET, OPTIONS")
+
+		if r.Method == "OPTIONS" {
+			return
+		}
+
+		h.ServeHTTP(w, r)
+	})
 }
