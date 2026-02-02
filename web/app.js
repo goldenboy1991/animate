@@ -11,7 +11,7 @@ document.getElementById("createBtn").onclick = async () => {
     return;
   }
 
-  const res = await fetch("https://antonkombarov1991.duckdns.org:8080/generate-creature", {
+  const res = await fetch("/api/generate-creature", {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({ description: desc })
