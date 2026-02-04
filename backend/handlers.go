@@ -3,6 +3,7 @@ package main
 import (
 	"bytes"
 	"encoding/json"
+	"log"
 	"net/http"
 	"os"
 	"time"
@@ -23,6 +24,13 @@ type GenerateResponse struct {
 }
 
 func GenerateCreature(w http.ResponseWriter, r *http.Request) {
+	log.Printf("GenerateCreature called: method=%s, path=%s", r.Method, r.URL.Path)
+
+	if r.Method != http.MethodPost {
+		log.Println("Wrong method, returning 405")
+		http.Error(w, "Method not allowed", http.StatusMethodNotAllowed)
+		return
+	}
 	var req GenerateRequest
 	json.NewDecoder(r.Body).Decode(&req)
 
@@ -69,18 +77,4 @@ func GenerateCreature(w http.ResponseWriter, r *http.Request) {
 func FeedHandler(w http.ResponseWriter, r *http.Request) {
 	w.WriteHeader(http.StatusOK)
 	w.Write([]byte(`{"status":"fed"}`))
-}
-
-func withCORS(h http.Handler) http.Handler {
-	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		w.Header().Set("Access-Control-Allow-Origin", "*")
-		w.Header().Set("Access-Control-Allow-Headers", "Content-Type")
-		w.Header().Set("Access-Control-Allow-Methods", "POST, GET, OPTIONS")
-
-		if r.Method == "OPTIONS" {
-			return
-		}
-
-		h.ServeHTTP(w, r)
-	})
 }
