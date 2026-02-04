@@ -8,14 +8,6 @@
   box-sizing: border-box;
 }
 
-html {
-  height: 100%;
-}
-
-body {
-  height: 100%;
-}
-
 :root {
   /* Цвета из Telegram theme */
   --tg-bg: var(--tg-theme-bg-color, #ffffff);
@@ -60,11 +52,10 @@ body {
    ======================================== */
 
 .container {
-  width: 100%;
   max-width: 600px;
   margin: 0 auto;
   padding: 0;
-  min-height: 100%;
+  min-height: 100vh;
   display: flex;
   flex-direction: column;
 }
@@ -128,8 +119,6 @@ body {
 .main {
   flex: 1;
   padding: 24px 20px;
-  display: flex;
-  flex-direction: column;
 }
 
 /* ========================================
@@ -272,17 +261,12 @@ body {
 .loading {
   display: none;
   text-align: center;
+  padding: 40px 20px;
   animation: fadeIn 0.3s ease;
-  height: 100%;
-  display: flex;
-  flex-direction: column;
-  justify-content: center;
-  align-items: center;
-  padding: 0 20px;
 }
 
 .loading.active {
-  display: flex;
+  display: block;
 }
 
 .spinner {
@@ -331,24 +315,12 @@ body {
   box-shadow: var(--shadow-lg);
 }
 
-.image-wrapper {
-  position: relative;
-  width: 100%;
-  padding-top: 100%; /* Фиксированный квадратный формат (aspect-ratio 1:1) */
-  overflow: hidden;
-  border-radius: var(--radius-md);
-  margin-bottom: 16px;
-  background-color: var(--tg-bg); /* Фон для прозрачных изображений */
-}
-
 .result-image {
-  position: absolute;
-  top: 0;
-  left: 0;
   width: 100%;
-  height: 100%;
-  object-fit: contain; /* Сохраняет пропорции, вписывая в квадрат */
+  height: auto;
+  border-radius: var(--radius-md);
   display: block;
+  margin-bottom: 16px;
   animation: scaleIn 0.5s ease;
 }
 
@@ -374,13 +346,8 @@ body {
 
 .empty-state {
   text-align: center;
+  padding: 60px 20px;
   animation: fadeIn 0.3s ease;
-  height: 100%;
-  display: flex;
-  flex-direction: column;
-  justify-content: center;
-  align-items: center;
-  padding: 0 20px;
 }
 
 .empty-state.hidden {
@@ -456,10 +423,6 @@ body {
   .btn-primary {
     padding: 14px 20px;
     font-size: 15px;
-  }
-  
-  .loading, .empty-state {
-    padding: 0 16px;
   }
 }
 
