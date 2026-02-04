@@ -1,25 +1,37 @@
 const tg = window.Telegram.WebApp;
-
 tg.ready();
 tg.expand();
 
-document.getElementById("createBtn").onclick = async () => {
-  const desc = document.getElementById("description").value;
+const btn = document.getElementById("createBtn");
+const img = document.getElementById("result");
 
-  if (!desc) {
+btn.onclick = async () => {
+  const description = document.getElementById("description").value;
+
+  if (!description) {
     tg.showAlert("Напиши, кто это 🙂");
     return;
   }
 
-  const res = await fetch("/api/generate-creature", {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ description: desc })
+  tg.showPopup({
+    title: "Создаю...",
+    message: "Подожди немного ✨"
   });
 
-  const data = await res.json();
+  try {
+    const res = await fetch("/api/generate-creature", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json"
+      },
+      body: JSON.stringify({ description })
+    });
 
-  document.getElementById("result").innerHTML =
-    `<img src="${data.image_url}" style="max-width:100%">`;
+    const data = await res.json();
+    img.src = data.image;
+
+    tg.showAlert("Готово! Можно кормить 🥕");
+  } catch (e) {
+    tg.showAlert("Ошибка генерации 😢");
+  }
 };
-
