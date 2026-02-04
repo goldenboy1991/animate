@@ -130,16 +130,3 @@ descriptionInput.addEventListener('keypress', (e) => {
     createBtn.click();
   }
 });
-```
-
----
-
-## Структура файлов
-```
-/var/www/html/animate/
-├── index.html
-├── style.css
-├── app.js
-└── backend/
-    ├── backend (бинарник)
-    └── main.go
