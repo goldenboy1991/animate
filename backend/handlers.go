@@ -2,6 +2,7 @@ package main
 
 import (
 	"bytes"
+	"encoding/base64"
 	"encoding/json"
 	"io"
 	"log"
@@ -12,12 +13,6 @@ import (
 
 type GenerateRequest struct {
 	Description string `json:"description"`
-}
-
-type CFResponse struct {
-	Result struct {
-		Image string `json:"image"` // base64
-	} `json:"result"`
 }
 
 type GenerateResponse struct {
@@ -45,7 +40,6 @@ func GenerateCreature(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	// КРИТИЧНО: проверка env
 	accountID := os.Getenv("CF_ACCOUNT_ID")
 	apiToken := os.Getenv("CF_API_TOKEN")
 
@@ -63,14 +57,25 @@ func GenerateCreature(w http.ResponseWriter, r *http.Request) {
 		"prompt": prompt,
 	}
 
-	jsonBody, _ := json.Marshal(body)
+	jsonBody, err := json.Marshal(body)
+	if err != nil {
+		log.Println("Marshal error:", err)
+		http.Error(w, "Internal error", 500)
+		return
+	}
 
 	url := "https://api.cloudflare.com/client/v4/accounts/" + accountID +
 		"/ai/run/@cf/stabilityai/stable-diffusion-xl-base-1.0"
 
 	log.Printf("Cloudflare URL: %s", url)
 
-	httpReq, _ := http.NewRequest("POST", url, bytes.NewBuffer(jsonBody))
+	httpReq, err := http.NewRequest("POST", url, bytes.NewBuffer(jsonBody))
+	if err != nil {
+		log.Println("Request creation error:", err)
+		http.Error(w, "Internal error", 500)
+		return
+	}
+
 	httpReq.Header.Set("Authorization", "Bearer "+apiToken)
 	httpReq.Header.Set("Content-Type", "application/json")
 
@@ -85,7 +90,6 @@ func GenerateCreature(w http.ResponseWriter, r *http.Request) {
 
 	log.Printf("Cloudflare response status: %d", resp.StatusCode)
 
-	// ВАЖНО: проверяй статус ответа
 	if resp.StatusCode != http.StatusOK {
 		bodyBytes, _ := io.ReadAll(resp.Body)
 		log.Printf("Cloudflare error response: %s", string(bodyBytes))
@@ -93,21 +97,24 @@ func GenerateCreature(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	var cfResp CFResponse
-	if err := json.NewDecoder(resp.Body).Decode(&cfResp); err != nil {
-		log.Println("Cloudflare response decode error:", err)
-		http.Error(w, "Invalid AI response", http.StatusInternalServerError)
+	// Cloudflare возвращает PNG НАПРЯМУЮ, не JSON
+	imageBytes, err := io.ReadAll(resp.Body)
+	if err != nil {
+		log.Println("Read response error:", err)
+		http.Error(w, "Failed to read image", 500)
 		return
 	}
 
-	log.Printf("Got image from Cloudflare, base64 length: %d", len(cfResp.Result.Image))
+	log.Printf("Got PNG from Cloudflare, size: %d bytes", len(imageBytes))
 
-	if cfResp.Result.Image == "" {
-		log.Println("WARNING: Cloudflare returned empty image")
-	}
+	// Конвертируем в base64
+
+	imageBase64 := base64.StdEncoding.EncodeToString(imageBytes)
+
+	log.Printf("Base64 encoded, length: %d", len(imageBase64))
 
 	result := map[string]string{
-		"image": "data:image/png;base64," + cfResp.Result.Image,
+		"image": "data:image/png;base64," + imageBase64,
 	}
 
 	w.Header().Set("Content-Type", "application/json")
