@@ -12,7 +12,11 @@ func main() {
 
 	mux.HandleFunc("/feed", FeedHandler)
 
-	log.Println("Backend startedd on :8080")
+	mux.HandleFunc("/debug", func(w http.ResponseWriter, r *http.Request) {
+		w.Write([]byte("OK"))
+	})
+
+	log.Println("Backend started on :8080")
 	log.Fatal(http.ListenAndServe(":8080", withCORS(mux)))
 }
 
