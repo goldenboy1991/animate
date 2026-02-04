@@ -8,6 +8,14 @@
   box-sizing: border-box;
 }
 
+html {
+  height: 100%;
+}
+
+body {
+  height: 100%;
+}
+
 :root {
   /* Цвета из Telegram theme */
   --tg-bg: var(--tg-theme-bg-color, #ffffff);
@@ -52,10 +60,11 @@ body {
    ======================================== */
 
 .container {
+  width: 100%;
   max-width: 600px;
   margin: 0 auto;
   padding: 0;
-  min-height: 100vh;
+  min-height: 100%;
   display: flex;
   flex-direction: column;
 }
@@ -119,6 +128,8 @@ body {
 .main {
   flex: 1;
   padding: 24px 20px;
+  display: flex;
+  flex-direction: column;
 }
 
 /* ========================================
@@ -261,12 +272,17 @@ body {
 .loading {
   display: none;
   text-align: center;
-  padding: 40px 20px;
   animation: fadeIn 0.3s ease;
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  padding: 0 20px;
 }
 
 .loading.active {
-  display: block;
+  display: flex;
 }
 
 .spinner {
@@ -358,8 +374,13 @@ body {
 
 .empty-state {
   text-align: center;
-  padding: 60px 20px;
   animation: fadeIn 0.3s ease;
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  padding: 0 20px;
 }
 
 .empty-state.hidden {
@@ -435,6 +456,10 @@ body {
   .btn-primary {
     padding: 14px 20px;
     font-size: 15px;
+  }
+  
+  .loading, .empty-state {
+    padding: 0 16px;
   }
 }
 
