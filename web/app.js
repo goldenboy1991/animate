@@ -51,52 +51,156 @@ function showSaveIndicator() {
 
 // Save image for iOS devices (including Telegram WebApp)
 function saveImageForIOS(imageData) {
-    showSaveIndicator();
+    // Убираем показ индикатора, так как он мешает нативному диалогу
+    // showSaveIndicator();
     
     if (isTelegramWebApp()) {
-        // Для Telegram WebApp используем window.open в новой вкладке
-        try {
-            const newWindow = window.open(imageData, '_blank');
-            if (!newWindow) {
-                // Если не удалось открыть новое окно, показываем модальное окно с инструкциями
-                showSaveInstructionsModal(imageData);
-            }
-        } catch (error) {
-            console.error('Ошибка открытия изображения в Telegram:', error);
-            showSaveInstructionsModal(imageData);
-        }
-    } else if (isSafari()) {
-        // Для Safari используем специальный метод
-        try {
-            const link = document.createElement('a');
-            link.href = imageData;
-            link.download = `generated-image-${Date.now()}.png`;
-            link.target = '_blank';
-            link.rel = 'noopener noreferrer';
-            
-            // Для Safari добавляем элемент в DOM перед кликом
-            document.body.appendChild(link);
-            link.click();
-            document.body.removeChild(link);
-        } catch (error) {
-            console.error('Ошибка сохранения в Safari:', error);
-            showSaveInstructionsModal(imageData);
-        }
+        // Для Telegram WebApp используем специальный метод
+        saveImageForTelegram(imageData);
     } else {
-        // Для других iOS браузеров
-        try {
-            const link = document.createElement('a');
-            link.href = imageData;
-            link.download = `generated-image-${Date.now()}.png`;
-            link.target = '_blank';
-            link.rel = 'noopener noreferrer';
-            document.body.appendChild(link);
-            link.click();
-            document.body.removeChild(link);
-        } catch (error) {
-            console.error('Ошибка сохранения на iOS:', error);
-            showSaveInstructionsModal(imageData);
+        // Для обычных iOS браузеров
+        saveImageWithNativeDialog(imageData);
+    }
+}
+
+// Специальная функция для сохранения в Telegram WebApp
+function saveImageForTelegram(imageData) {
+    try {
+        // Пытаемся использовать Telegram WebApp API для открытия изображения
+        if (window.Telegram && window.Telegram.WebApp) {
+            // Открываем изображение в новой вкладке Telegram
+            window.Telegram.WebApp.openLink(imageData, {
+                try_browser: true,
+                force_open: true
+            });
+        } else {
+            // Fallback на стандартный метод
+            saveImageWithNativeDialog(imageData);
         }
+    } catch (error) {
+        console.error('Ошибка сохранения в Telegram:', error);
+        saveImageWithNativeDialog(imageData);
+    }
+}
+
+// Универсальная функция для вызова нативного iOS диалога
+function saveImageWithNativeDialog(imageData) {
+    try {
+        // Создаем изображение и добавляем его в DOM
+        const img = document.createElement('img');
+        img.src = imageData;
+        img.style.position = 'fixed';
+        img.style.top = '-9999px';
+        img.style.left = '-9999px';
+        img.style.opacity = '0';
+        img.style.width = '1px';
+        img.style.height = '1px';
+        document.body.appendChild(img);
+        
+        // Ждем загрузки изображения
+        img.onload = function() {
+            // Имитируем долгое нажатие на изображение для вызова iOS диалога
+            setTimeout(() => {
+                // Создаем события для имитации долгого нажатия
+                const touchStartEvent = new TouchEvent('touchstart', {
+                    bubbles: true,
+                    cancelable: true,
+                    touches: [new Touch({
+                        identifier: 1,
+                        target: img,
+                        clientX: 0,
+                        clientY: 0
+                    })]
+                });
+                
+                const touchEndEvent = new TouchEvent('touchend', {
+                    bubbles: true,
+                    cancelable: true
+                });
+                
+                // Добавляем изображение в видимую область на короткое время
+                img.style.position = 'absolute';
+                img.style.top = '0';
+                img.style.left = '0';
+                img.style.opacity = '1';
+                img.style.width = '100px';
+                img.style.height = '100px';
+                
+                // Имитируем долгое нажатие
+                img.dispatchEvent(touchStartEvent);
+                
+                // Ждем немного и завершаем
+                setTimeout(() => {
+                    img.dispatchEvent(touchEndEvent);
+                    
+                    // Удаляем изображение
+                    setTimeout(() => {
+                        if (document.body.contains(img)) {
+                            document.body.removeChild(img);
+                        }
+                    }, 100);
+                }, 500);
+            }, 100);
+        };
+        
+        img.onerror = function() {
+            console.error('Ошибка загрузки изображения');
+            showSaveInstructionsModal(imageData);
+            document.body.removeChild(img);
+        };
+        
+        // Добавляем fallback на случай, если touch события не сработают
+        setTimeout(() => {
+            if (document.body.contains(img)) {
+                // Пытаемся использовать альтернативный метод
+                try {
+                    const link = document.createElement('a');
+                    link.href = imageData;
+                    link.download = `generated-image-${Date.now()}.png`;
+                    link.target = '_blank';
+                    link.rel = 'noopener noreferrer';
+                    
+                    // Для iOS создаем всплывающее окно с изображением
+                    const newWindow = window.open('', '_blank');
+                    if (newWindow) {
+                        newWindow.document.write(`
+                            <!DOCTYPE html>
+                            <html>
+                            <head>
+                                <title>Сохранение изображения</title>
+                                <meta name="viewport" content="width=device-width, initial-scale=1.0">
+                                <style>
+                                    body { margin: 0; padding: 20px; text-align: center; }
+                                    img { max-width: 100%; height: auto; border-radius: 8px; }
+                                    .instructions { margin-top: 20px; color: #666; }
+                                </style>
+                            </head>
+                            <body>
+                                <img src="${imageData}" alt="Сгенерированное изображение">
+                                <div class="instructions">
+                                    <p>Нажмите и удерживайте изображение, затем выберите "Сохранить изображение"</p>
+                                    <p><button onclick="window.close()">Закрыть</button></p>
+                                </div>
+                            </body>
+                            </html>
+                        `);
+                        newWindow.document.close();
+                    } else {
+                        throw new Error('Не удалось открыть новое окно');
+                    }
+                } catch (fallbackError) {
+                    console.error('Ошибка альтернативного метода:', fallbackError);
+                    showSaveInstructionsModal(imageData);
+                }
+                
+                // Удаляем скрытое изображение
+                document.body.removeChild(img);
+            }
+        }, 2000);
+        
+    } catch (error) {
+        console.error('Ошибка вызова iOS диалога:', error);
+        showSaveInstructionsModal(imageData);
     }
 }
 
