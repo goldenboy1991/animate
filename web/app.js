@@ -10,6 +10,17 @@ const errorMessage = document.getElementById('errorMessage');
 // State
 let isGenerating = false;
 
+// Check if iOS device
+function isIOS() {
+    return [
+        'iPad Simulator',
+        'iPhone Simulator',
+        'iPod Simulator',
+        'iPad',
+        'iPhone',
+        'iPod'
+    ].includes(navigator.platform) || (navigator.userAgent.includes("Mac") && "ontouchend" in document);
+}
 // Show loading indicator
 function updateButtonState(state) {
     if (state === 'loading') {
@@ -49,17 +60,41 @@ function showResult(imageData) {
         downloadBtn.classList.add('download-btn');
         resultContainer.appendChild(downloadBtn);
 
-        downloadBtn.addEventListener('click', () => {
-            const link = document.createElement('a');
-            link.href = imageData;
-            link.download = `generated-image-${Date.now()}.png`;
-            document.body.appendChild(link);
-            link.click();
-            document.body.removeChild(link);
+downloadBtn.addEventListener('click', () => {
+            if (isIOS()) {
+                // iOS method - use canvas
+                const img = new Image();
+                img.onload = function() {
+                    const canvas = document.createElement('canvas');
+                    canvas.width = img.width;
+                    canvas.height = img.height;
+                    const ctx = canvas.getContext('2d');
+                    ctx.drawImage(img, 0, 0);
+                    
+                    canvas.toBlob(function(blob) {
+                        const url = URL.createObjectURL(blob);
+                        const link = document.createElement('a');
+                        link.href = url;
+                        link.download = `generated-image-${Date.now()}.png`;
+                        document.body.appendChild(link);
+                        link.click();
+                        document.body.removeChild(link);
+                        URL.revokeObjectURL(url);
+                    }, 'image/png');
+                };
+                img.src = imageData;
+            } else {
+                // Desktop method
+                const link = document.createElement('a');
+                link.href = imageData;
+                link.download = `generated-image-${Date.now()}.png`;
+                document.body.appendChild(link);
+                link.click();
+                document.body.removeChild(link);
+            }
         });
     }
 }
-
 // Show error
 function showError(message) {
     errorMessage.textContent = message;
