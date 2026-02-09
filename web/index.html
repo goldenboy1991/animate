@@ -1,79 +1,39 @@
-<DOCUMENT filename="index.html">
 <!DOCTYPE html>
 <html lang="ru">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
-  <title>Оживи кляксу</title>
-  <script src="https://telegram.org/js/telegram-web-app.js"></script>
-  <link rel="stylesheet" href="style.css">
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Генератор изображений</title>
+    <link rel="stylesheet" href="style.css">
 </head>
 <body>
-  <div class="container">
-
-    <header class="header">
-      <div class="logo">✨</div>
-      <h1 class="title">Оживи кляксу</h1>
-      <p class="subtitle">Превращаем пятна в милых существ</p>
-    </header>
-
-    <main class="main">
-
-      <div class="input-section">
-        <label for="description" class="label">
-          <span class="label-icon">🎨</span>
-          Опиши существо
-        </label>
-        <input 
-          type="text"
-          id="description"
-          class="input"
-          placeholder="Например: фиолетовый кот, космический монстр..."
-          maxlength="100"
-        />
-        <div class="hint">Чем подробнее описание — тем лучше результат</div>
-      </div>
-
-      <button id="createBtn" class="btn-primary">
-        ✨ Создать существо
-      </button>
-
-      <div id="loading" class="loading">
-        <div class="spinner"></div>
-        <p class="loading-text">Создаю магию...</p>
-        <p class="loading-subtext">10–15 секунд</p>
-      </div>
-
-      <div id="resultSection" class="result-section">
-        <div class="result-card">
-
-          <!-- ВАЖНО: контейнер фиксированного формата -->
-          <div class="image-wrapper">
-            <img id="result" class="result-image" alt="Твоё существо" />
-          </div>
-
-          <div class="result-actions">
-            <button id="feedBtn" class="btn-secondary">🥕 Покормить</button>
-            <button id="newBtn" class="btn-secondary">🔄 Ещё</button>
-          </div>
+    <div class="container">
+        <h1>Генератор изображений</h1>
+        
+        <div class="input-section">
+            <input 
+                type="text" 
+                id="promptInput" 
+                placeholder="Введите описание изображения..."
+            >
+            <button id="generateBtn">
+                Сгенерировать
+            </button>
         </div>
-      </div>
 
-      <div id="emptyState" class="empty-state">
-        <div class="empty-icon">🎭</div>
-        <p class="empty-text">Здесь появится твоё существо</p>
-        <p class="empty-subtext">Опиши его и нажми «Создать»</p>
-      </div>
+        <div id="loading" style="display: none;">
+            Загрузка...
+        </div>
 
-    </main>
+        <div id="resultContainer" style="display: none;">
+            <img id="resultImage" src="#" alt="Результат генерации">
+        </div>
 
-    <footer class="footer">
-      <p class="footer-text">Создано с помощью AI ✨</p>
-    </footer>
+        <div id="errorContainer" style="display: none; color: red;">
+            <p id="errorMessage"></p>
+        </div>
+    </div>
 
-  </div>
-
-  <script src="app.js"></script>
+    <script src="app.js"></script>
 </body>
 </html>
-</DOCUMENT>

@@ -11,7 +11,18 @@ const errorMessage = document.getElementById('errorMessage');
 let isGenerating = false;
 
 // Show loading indicator
+function updateButtonState(state) {
+    if (state === 'loading') {
+        generateBtn.classList.add('loading');
+        generateBtn.textContent = 'Генерация...';
+    } else {
+        generateBtn.classList.remove('loading');
+        generateBtn.textContent = 'Сгенерировать';
+    }
+}
+
 function showLoading() {
+    updateButtonState('loading');
     loading.style.display = 'block';
     resultContainer.style.display = 'none';
     errorContainer.style.display = 'none';
@@ -28,6 +39,7 @@ function showResult(imageData) {
     resultContainer.style.display = 'block';
     errorContainer.style.display = 'none';
     hideLoading();
+    updateButtonState('ready');
 }
 
 // Show error
@@ -77,6 +89,7 @@ async function generateImage() {
         showError(error.message);
     } finally {
         isGenerating = false;
+        updateButtonState('ready');
     }
 }
 
