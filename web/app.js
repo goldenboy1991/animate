@@ -21,6 +21,13 @@ function isIOS() {
         'iPod'
     ].includes(navigator.platform) || (navigator.userAgent.includes("Mac") && "ontouchend" in document);
 }
+
+// Check if iPhone 11
+function isIPhone11() {
+    return navigator.userAgent.includes('iPhone OS 13_') && 
+           window.screen.width === 414 && 
+           window.screen.height === 896;
+}
 // Show loading indicator
 function updateButtonState(state) {
     if (state === 'loading') {
@@ -30,6 +37,60 @@ function updateButtonState(state) {
         generateBtn.classList.remove('loading');
         generateBtn.textContent = 'Сгенерировать';
     }
+}
+
+// Show save indicator
+function showSaveIndicator() {
+    const indicator = document.createElement('div');
+    indicator.className = 'save-indicator';
+    indicator.textContent = 'Сохранение...';
+    document.body.appendChild(indicator);
+    
+    // Удаляем через 2 секунды
+    setTimeout(() => {
+        document.body.removeChild(indicator);
+    }, 2000);
+}
+
+// Save image for iPhone 11
+function saveImageForIPhone11(imageData) {
+    // Создаем ссылку с правильными атрибутами
+    const link = document.createElement('a');
+    link.href = imageData;
+    link.download = `generated-image-${Date.now()}.png`;
+    link.target = '_blank';
+    link.rel = 'noopener noreferrer';
+    
+    // Добавляем обработку долгого нажатия
+    link.addEventListener('touchstart', handleLongPress);
+    
+    // Имитируем клик
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+}
+
+// Handle long press
+function handleLongPress(event) {
+    event.preventDefault();
+    // Показываем индикатор загрузки
+    showSaveIndicator();
+    // Выполняем сохранение
+    saveImageWithDelay(event.target.href);
+}
+
+// Save image with delay
+function saveImageWithDelay(imageData) {
+    setTimeout(() => {
+        const link = document.createElement('a');
+        link.href = imageData;
+        link.download = `generated-image-${Date.now()}.png`;
+        link.target = '_blank';
+        link.rel = 'noopener noreferrer';
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+    }, 500);
 }
 
 function showLoading() {
@@ -61,28 +122,19 @@ function showResult(imageData) {
         resultContainer.appendChild(downloadBtn);
 
 downloadBtn.addEventListener('click', () => {
-            if (isIOS()) {
-                // iOS method - use canvas
-                const img = new Image();
-                img.onload = function() {
-                    const canvas = document.createElement('canvas');
-                    canvas.width = img.width;
-                    canvas.height = img.height;
-                    const ctx = canvas.getContext('2d');
-                    ctx.drawImage(img, 0, 0);
-                    
-                    canvas.toBlob(function(blob) {
-                        const url = URL.createObjectURL(blob);
-                        const link = document.createElement('a');
-                        link.href = url;
-                        link.download = `generated-image-${Date.now()}.png`;
-                        document.body.appendChild(link);
-                        link.click();
-                        document.body.removeChild(link);
-                        URL.revokeObjectURL(url);
-                    }, 'image/png');
-                };
-                img.src = imageData;
+            if (isIPhone11()) {
+                // Специальный метод для iPhone 11
+                saveImageForIPhone11(imageData);
+            } else if (isIOS()) {
+                // Стандартный метод для других iOS устройств
+                const link = document.createElement('a');
+                link.href = imageData;
+                link.download = `generated-image-${Date.now()}.png`;
+                link.target = '_blank';
+                link.rel = 'noopener noreferrer';
+                document.body.appendChild(link);
+                link.click();
+                document.body.removeChild(link);
             } else {
                 // Desktop method
                 const link = document.createElement('a');
