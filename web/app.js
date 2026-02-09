@@ -66,142 +66,114 @@ function saveImageForIOS(imageData) {
 // Специальная функция для сохранения в Telegram WebApp
 function saveImageForTelegram(imageData) {
     try {
-        // Пытаемся использовать Telegram WebApp API для открытия изображения
-        if (window.Telegram && window.Telegram.WebApp) {
-            // Открываем изображение в новой вкладке Telegram
-            window.Telegram.WebApp.openLink(imageData, {
-                try_browser: true,
-                force_open: true
-            });
-        } else {
-            // Fallback на стандартный метод
-            saveImageWithNativeDialog(imageData);
-        }
+        // Для Telegram WebApp используем прямой метод с созданием видимого изображения
+        createVisibleImageForSave(imageData);
     } catch (error) {
         console.error('Ошибка сохранения в Telegram:', error);
-        saveImageWithNativeDialog(imageData);
+        // Пытаемся использовать Telegram WebApp API как fallback
+        try {
+            if (window.Telegram && window.Telegram.WebApp) {
+                // Создаем ссылку на изображение
+                const link = document.createElement('a');
+                link.href = imageData;
+                link.target = '_blank';
+                link.rel = 'noopener noreferrer';
+                
+                // Используем Telegram API для открытия ссылки
+                window.Telegram.WebApp.openLink(link.href, {
+                    try_browser: true
+                });
+            }
+        } catch (telegramError) {
+            console.error('Ошибка Telegram API:', telegramError);
+            showSaveInstructionsModal(imageData);
+        }
     }
 }
 
 // Универсальная функция для вызова нативного iOS диалога
 function saveImageWithNativeDialog(imageData) {
     try {
-        // Создаем изображение и добавляем его в DOM
-        const img = document.createElement('img');
-        img.src = imageData;
-        img.style.position = 'fixed';
-        img.style.top = '-9999px';
-        img.style.left = '-9999px';
-        img.style.opacity = '0';
-        img.style.width = '1px';
-        img.style.height = '1px';
-        document.body.appendChild(img);
-        
-        // Ждем загрузки изображения
-        img.onload = function() {
-            // Имитируем долгое нажатие на изображение для вызова iOS диалога
-            setTimeout(() => {
-                // Создаем события для имитации долгого нажатия
-                const touchStartEvent = new TouchEvent('touchstart', {
-                    bubbles: true,
-                    cancelable: true,
-                    touches: [new Touch({
-                        identifier: 1,
-                        target: img,
-                        clientX: 0,
-                        clientY: 0
-                    })]
-                });
-                
-                const touchEndEvent = new TouchEvent('touchend', {
-                    bubbles: true,
-                    cancelable: true
-                });
-                
-                // Добавляем изображение в видимую область на короткое время
-                img.style.position = 'absolute';
-                img.style.top = '0';
-                img.style.left = '0';
-                img.style.opacity = '1';
-                img.style.width = '100px';
-                img.style.height = '100px';
-                
-                // Имитируем долгое нажатие
-                img.dispatchEvent(touchStartEvent);
-                
-                // Ждем немного и завершаем
-                setTimeout(() => {
-                    img.dispatchEvent(touchEndEvent);
-                    
-                    // Удаляем изображение
-                    setTimeout(() => {
-                        if (document.body.contains(img)) {
-                            document.body.removeChild(img);
-                        }
-                    }, 100);
-                }, 500);
-            }, 100);
-        };
-        
-        img.onerror = function() {
-            console.error('Ошибка загрузки изображения');
-            showSaveInstructionsModal(imageData);
-            document.body.removeChild(img);
-        };
-        
-        // Добавляем fallback на случай, если touch события не сработают
-        setTimeout(() => {
-            if (document.body.contains(img)) {
-                // Пытаемся использовать альтернативный метод
-                try {
-                    const link = document.createElement('a');
-                    link.href = imageData;
-                    link.download = `generated-image-${Date.now()}.png`;
-                    link.target = '_blank';
-                    link.rel = 'noopener noreferrer';
-                    
-                    // Для iOS создаем всплывающее окно с изображением
-                    const newWindow = window.open('', '_blank');
-                    if (newWindow) {
-                        newWindow.document.write(`
-                            <!DOCTYPE html>
-                            <html>
-                            <head>
-                                <title>Сохранение изображения</title>
-                                <meta name="viewport" content="width=device-width, initial-scale=1.0">
-                                <style>
-                                    body { margin: 0; padding: 20px; text-align: center; }
-                                    img { max-width: 100%; height: auto; border-radius: 8px; }
-                                    .instructions { margin-top: 20px; color: #666; }
-                                </style>
-                            </head>
-                            <body>
-                                <img src="${imageData}" alt="Сгенерированное изображение">
-                                <div class="instructions">
-                                    <p>Нажмите и удерживайте изображение, затем выберите "Сохранить изображение"</p>
-                                    <p><button onclick="window.close()">Закрыть</button></p>
-                                </div>
-                            </body>
-                            </html>
-                        `);
-                        newWindow.document.close();
-                    } else {
-                        throw new Error('Не удалось открыть новое окно');
-                    }
-                } catch (fallbackError) {
-                    console.error('Ошибка альтернативного метода:', fallbackError);
-                    showSaveInstructionsModal(imageData);
-                }
-                
-                // Удаляем скрытое изображение
-                document.body.removeChild(img);
-            }
-        }, 2000);
-        
+        // Для iOS используем прямой метод с видимым изображением
+        createVisibleImageForSave(imageData);
     } catch (error) {
         console.error('Ошибка вызова iOS диалога:', error);
         showSaveInstructionsModal(imageData);
     }
+}
+
+// Функция для создания видимого изображения и вызова iOS диалога
+function createVisibleImageForSave(imageData) {
+    // Создаем видимое изображение в центре экрана
+    const img = document.createElement('img');
+    img.src = imageData;
+    img.style.position = 'fixed';
+    img.style.top = '50%';
+    img.style.left = '50%';
+    img.style.transform = 'translate(-50%, -50%)';
+    img.style.maxWidth = '80vw';
+    img.style.maxHeight = '80vh';
+    img.style.borderRadius = '8px';
+    img.style.boxShadow = '0 4px 12px rgba(0, 0, 0, 0.3)';
+    img.style.zIndex = '3000';
+    img.style.background = 'white';
+    img.style.padding = '10px';
+    
+    // Добавляем подсказку
+    const hint = document.createElement('div');
+    hint.textContent = 'Нажмите и удерживайте изображение для сохранения';
+    hint.style.position = 'fixed';
+    hint.style.bottom = '20px';
+    hint.style.left = '50%';
+    hint.style.transform = 'translateX(-50%)';
+    hint.style.background = 'rgba(0, 0, 0, 0.8)';
+    hint.style.color = 'white';
+    hint.style.padding = '10px 20px';
+    hint.style.borderRadius = '20px';
+    hint.style.zIndex = '3000';
+    hint.style.fontSize = '14px';
+    
+    document.body.appendChild(img);
+    document.body.appendChild(hint);
+    
+    // Обработчик для закрытия по клику вне изображения
+    const closeHandler = (e) => {
+        if (e.target !== img) {
+            document.body.removeChild(img);
+            document.body.removeChild(hint);
+            document.removeEventListener('click', closeHandler);
+        }
+    };
+    
+    // Обработчик долгого нажатия
+    let pressTimer;
+    img.addEventListener('touchstart', (e) => {
+        pressTimer = setTimeout(() => {
+            // Долгое нажатие - изображение уже видимо, пользователь может вызвать диалог
+            hint.textContent = 'Отпустите, чтобы сохранить';
+            hint.style.background = 'rgba(16, 185, 129, 0.9)';
+        }, 500);
+    });
+    
+    img.addEventListener('touchend', () => {
+        clearTimeout(pressTimer);
+        // Удаляем элементы через 3 секунды
+        setTimeout(() => {
+            if (document.body.contains(img)) {
+                document.body.removeChild(img);
+            }
+            if (document.body.contains(hint)) {
+                document.body.removeChild(hint);
+            }
+        }, 3000);
+    });
+    
+    img.addEventListener('touchmove', () => {
+        clearTimeout(pressTimer);
+    });
+    
+    // Добавляем обработчик закрытия
+    document.addEventListener('click', closeHandler);
 }
 
 // Show modal with save instructions
