@@ -258,18 +258,13 @@ function showResult(imageData) {
         downloadBtn.classList.add('download-btn');
         resultContainer.appendChild(downloadBtn);
 
-downloadBtn.addEventListener('click', () => {
-            if (isIOS()) {
-                // Используем улучшенный метод для всех iOS устройств
-                saveImageForIOS(imageData);
+        downloadBtn.addEventListener('click', () => {
+            if (isIOS() || isTelegramWebApp()) {
+                // Для iOS и Telegram используем blob метод
+                saveClientImage(imageData, `generated-image-${Date.now()}.png`);
             } else {
-                // Desktop method
-                const link = document.createElement('a');
-                link.href = imageData;
-                link.download = `generated-image-${Date.now()}.png`;
-                document.body.appendChild(link);
-                link.click();
-                document.body.removeChild(link);
+                // Для desktop также используем универсальный метод
+                saveClientImage(imageData, `generated-image-${Date.now()}.png`);
             }
         });
     }
