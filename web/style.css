@@ -156,6 +156,24 @@ h1::after {
     border: 1px solid rgba(0, 0, 0, 0.1);
 }
 
+.download-btn {
+    display: block;
+    margin: 20px auto 0;
+    padding: 12px 24px;
+    background: var(--success-color);
+    color: white;
+    border: none;
+    border-radius: 8px;
+    cursor: pointer;
+    font-size: 16px;
+    transition: all 0.3s ease;
+}
+
+.download-btn:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+}
+
 #errorContainer {
     padding: 1rem;
     border: 2px solid var(--error-color);

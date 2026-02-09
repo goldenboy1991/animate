@@ -40,6 +40,24 @@ function showResult(imageData) {
     errorContainer.style.display = 'none';
     hideLoading();
     updateButtonState('ready');
+    
+    // Добавляем кнопку сохранения
+    if (!document.getElementById('downloadBtn')) {
+        const downloadBtn = document.createElement('button');
+        downloadBtn.id = 'downloadBtn';
+        downloadBtn.textContent = 'Сохранить изображение';
+        downloadBtn.classList.add('download-btn');
+        resultContainer.appendChild(downloadBtn);
+
+        downloadBtn.addEventListener('click', () => {
+            const link = document.createElement('a');
+            link.href = imageData;
+            link.download = `generated-image-${Date.now()}.png`;
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+        });
+    }
 }
 
 // Show error
