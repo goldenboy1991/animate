@@ -37,6 +37,30 @@ function updateButtonState(state) {
 }
 
 // Show save indicator
+function saveClientImage(base64Data, fileName = 'image.png') {
+    const byteString = atob(base64Data.split(',')[1]);
+    const mimeString = base64Data.split(',')[0].split(':')[1].split(';')[0];
+    
+    const ab = new ArrayBuffer(byteString.length);
+    const ia = new Uint8Array(ab);
+    for (let i = 0; i < byteString.length; i++) {
+        ia[i] = byteString.charCodeAt(i);
+    }
+    const blob = new Blob([ab], { type: mimeString });
+
+    const blobUrl = URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    
+    link.href = blobUrl;
+    link.download = fileName;
+    
+    document.body.appendChild(link);
+    link.click();
+    
+    document.body.removeChild(link);
+    setTimeout(() => URL.revokeObjectURL(blobUrl), 100);
+}
+
 function showSaveIndicator() {
     const indicator = document.createElement('div');
     indicator.className = 'save-indicator';
