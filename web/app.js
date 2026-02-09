@@ -12,21 +12,18 @@ let isGenerating = false;
 
 // Check if iOS device
 function isIOS() {
-    return [
-        'iPad Simulator',
-        'iPhone Simulator',
-        'iPod Simulator',
-        'iPad',
-        'iPhone',
-        'iPod'
-    ].includes(navigator.platform) || (navigator.userAgent.includes("Mac") && "ontouchend" in document);
+    return /iPad|iPhone|iPod/.test(navigator.userAgent) || 
+           (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
 }
 
-// Check if iPhone 11
-function isIPhone11() {
-    return navigator.userAgent.includes('iPhone OS 13_') && 
-           window.screen.width === 414 && 
-           window.screen.height === 896;
+// Check if Telegram WebApp
+function isTelegramWebApp() {
+    return window.Telegram && window.Telegram.WebApp;
+}
+
+// Check if Safari browser
+function isSafari() {
+    return /^((?!chrome|android).)*safari/i.test(navigator.userAgent);
 }
 // Show loading indicator
 function updateButtonState(state) {
@@ -52,45 +49,85 @@ function showSaveIndicator() {
     }, 2000);
 }
 
-// Save image for iPhone 11
-function saveImageForIPhone11(imageData) {
-    // Создаем ссылку с правильными атрибутами
-    const link = document.createElement('a');
-    link.href = imageData;
-    link.download = `generated-image-${Date.now()}.png`;
-    link.target = '_blank';
-    link.rel = 'noopener noreferrer';
-    
-    // Добавляем обработку долгого нажатия
-    link.addEventListener('touchstart', handleLongPress);
-    
-    // Имитируем клик
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
-}
-
-// Handle long press
-function handleLongPress(event) {
-    event.preventDefault();
-    // Показываем индикатор загрузки
+// Save image for iOS devices (including Telegram WebApp)
+function saveImageForIOS(imageData) {
     showSaveIndicator();
-    // Выполняем сохранение
-    saveImageWithDelay(event.target.href);
+    
+    if (isTelegramWebApp()) {
+        // Для Telegram WebApp используем window.open в новой вкладке
+        try {
+            const newWindow = window.open(imageData, '_blank');
+            if (!newWindow) {
+                // Если не удалось открыть новое окно, показываем модальное окно с инструкциями
+                showSaveInstructionsModal(imageData);
+            }
+        } catch (error) {
+            console.error('Ошибка открытия изображения в Telegram:', error);
+            showSaveInstructionsModal(imageData);
+        }
+    } else if (isSafari()) {
+        // Для Safari используем специальный метод
+        try {
+            const link = document.createElement('a');
+            link.href = imageData;
+            link.download = `generated-image-${Date.now()}.png`;
+            link.target = '_blank';
+            link.rel = 'noopener noreferrer';
+            
+            // Для Safari добавляем элемент в DOM перед кликом
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+        } catch (error) {
+            console.error('Ошибка сохранения в Safari:', error);
+            showSaveInstructionsModal(imageData);
+        }
+    } else {
+        // Для других iOS браузеров
+        try {
+            const link = document.createElement('a');
+            link.href = imageData;
+            link.download = `generated-image-${Date.now()}.png`;
+            link.target = '_blank';
+            link.rel = 'noopener noreferrer';
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+        } catch (error) {
+            console.error('Ошибка сохранения на iOS:', error);
+            showSaveInstructionsModal(imageData);
+        }
+    }
 }
 
-// Save image with delay
-function saveImageWithDelay(imageData) {
-    setTimeout(() => {
-        const link = document.createElement('a');
-        link.href = imageData;
-        link.download = `generated-image-${Date.now()}.png`;
-        link.target = '_blank';
-        link.rel = 'noopener noreferrer';
-        document.body.appendChild(link);
-        link.click();
-        document.body.removeChild(link);
-    }, 500);
+// Show modal with save instructions
+function showSaveInstructionsModal(imageData) {
+    // Создаем модальное окно
+    const modal = document.createElement('div');
+    modal.className = 'save-modal';
+    modal.innerHTML = `
+        <div class="save-modal-content">
+            <h3>Сохранение изображения</h3>
+            <img src="${imageData}" alt="Сгенерированное изображение" class="modal-image">
+            <p>Нажмите и удерживайте изображение, затем выберите "Сохранить изображение"</p>
+            <button class="modal-close-btn">Закрыть</button>
+        </div>
+    `;
+    
+    document.body.appendChild(modal);
+    
+    // Обработчик закрытия модального окна
+    const closeBtn = modal.querySelector('.modal-close-btn');
+    closeBtn.addEventListener('click', () => {
+        document.body.removeChild(modal);
+    });
+    
+    // Закрытие по клику на фон
+    modal.addEventListener('click', (e) => {
+        if (e.target === modal) {
+            document.body.removeChild(modal);
+        }
+    });
 }
 
 function showLoading() {
@@ -122,19 +159,9 @@ function showResult(imageData) {
         resultContainer.appendChild(downloadBtn);
 
 downloadBtn.addEventListener('click', () => {
-            if (isIPhone11()) {
-                // Специальный метод для iPhone 11
-                saveImageForIPhone11(imageData);
-            } else if (isIOS()) {
-                // Стандартный метод для других iOS устройств
-                const link = document.createElement('a');
-                link.href = imageData;
-                link.download = `generated-image-${Date.now()}.png`;
-                link.target = '_blank';
-                link.rel = 'noopener noreferrer';
-                document.body.appendChild(link);
-                link.click();
-                document.body.removeChild(link);
+            if (isIOS()) {
+                // Используем улучшенный метод для всех iOS устройств
+                saveImageForIOS(imageData);
             } else {
                 // Desktop method
                 const link = document.createElement('a');
