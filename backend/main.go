@@ -8,15 +8,10 @@ import (
 func main() {
 	mux := http.NewServeMux()
 
-	mux.HandleFunc("/api/generate-creature", GenerateCreature)
-
-	mux.HandleFunc("/feed", FeedHandler)
-
-	mux.HandleFunc("/debug", func(w http.ResponseWriter, r *http.Request) {
-		w.Write([]byte("OK"))
-	})
+	mux.HandleFunc("/api/generate-image", GenerateImageHandler)
 
 	log.Println("Backend started on :8080")
+	log.Println("Image generation endpoint: /api/generate-image")
 	log.Fatal(http.ListenAndServe(":8080", withCORS(mux)))
 }
 

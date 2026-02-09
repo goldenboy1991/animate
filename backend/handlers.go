@@ -19,8 +19,8 @@ type GenerateResponse struct {
 	ImageURL string `json:"image_url"`
 }
 
-func GenerateCreature(w http.ResponseWriter, r *http.Request) {
-	log.Printf("GenerateCreature called: method=%s, path=%s", r.Method, r.URL.Path)
+func GenerateImageHandler(w http.ResponseWriter, r *http.Request) {
+	log.Printf("GenerateImageHandler called: method=%s, path=%s", r.Method, r.URL.Path)
 
 	if r.Method != http.MethodPost {
 		log.Println("Wrong method, returning 405")
@@ -36,7 +36,7 @@ func GenerateCreature(w http.ResponseWriter, r *http.Request) {
 	}
 
 	if req.Description == "" {
-		http.Error(w, "empty description", 400)
+		http.Error(w, "prompt cannot be empty", 400)
 		return
 	}
 
@@ -49,9 +49,10 @@ func GenerateCreature(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	log.Printf("Using Cloudflare account: %s (token length: %d)", accountID, len(apiToken))
+	log.Printf("Using Cloudflare account: %s", accountID)
 
-	prompt := "Cute cartoon creature for kids, based on ink blot, " + req.Description
+	// Use user's prompt directly without modifications
+	prompt := req.Description
 
 	body := map[string]interface{}{
 		"prompt": prompt,
@@ -97,7 +98,6 @@ func GenerateCreature(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	// Cloudflare возвращает PNG НАПРЯМУЮ, не JSON
 	imageBytes, err := io.ReadAll(resp.Body)
 	if err != nil {
 		log.Println("Read response error:", err)
@@ -106,8 +106,6 @@ func GenerateCreature(w http.ResponseWriter, r *http.Request) {
 	}
 
 	log.Printf("Got PNG from Cloudflare, size: %d bytes", len(imageBytes))
-
-	// Конвертируем в base64
 
 	imageBase64 := base64.StdEncoding.EncodeToString(imageBytes)
 
@@ -119,10 +117,5 @@ func GenerateCreature(w http.ResponseWriter, r *http.Request) {
 
 	w.Header().Set("Content-Type", "application/json")
 	json.NewEncoder(w).Encode(result)
-	log.Println("=== GenerateCreature completed ===")
-}
-
-func FeedHandler(w http.ResponseWriter, r *http.Request) {
-	w.WriteHeader(http.StatusOK)
-	w.Write([]byte(`{"status":"fed"}`))
+	log.Println("=== GenerateImageHandler completed ===")
 }

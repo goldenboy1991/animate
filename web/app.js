@@ -1,132 +1,89 @@
-const tg = window.Telegram.WebApp;
-tg.ready();
-tg.expand();
-
-// Применяем тему Telegram
-document.documentElement.style.setProperty('--tg-bg', tg.themeParams.bg_color || '#ffffff');
-document.documentElement.style.setProperty('--tg-text', tg.themeParams.text_color || '#000000');
-document.documentElement.style.setProperty('--tg-hint', tg.themeParams.hint_color || '#999999');
-document.documentElement.style.setProperty('--tg-button', tg.themeParams.button_color || '#3390ec');
-document.documentElement.style.setProperty('--tg-secondary-bg', tg.themeParams.secondary_bg_color || '#f4f4f5');
-
 // Elements
-const descriptionInput = document.getElementById('description');
-const createBtn = document.getElementById('createBtn');
+const promptInput = document.getElementById('promptInput');
+const generateBtn = document.getElementById('generateBtn');
 const loading = document.getElementById('loading');
-const resultSection = document.getElementById('resultSection');
-const emptyState = document.getElementById('emptyState');
-const resultImage = document.getElementById('result');
-const feedBtn = document.getElementById('feedBtn');
-const newBtn = document.getElementById('newBtn');
+const resultContainer = document.getElementById('resultContainer');
+const resultImage = document.getElementById('resultImage');
+const errorContainer = document.getElementById('errorContainer');
+const errorMessage = document.getElementById('errorMessage');
 
 // State
 let isGenerating = false;
 
-// Показать loading
+// Show loading indicator
 function showLoading() {
-  loading.classList.add('active');
-  emptyState.classList.add('hidden');
-  resultSection.classList.remove('active');
-  createBtn.disabled = true;
+    loading.style.display = 'block';
+    resultContainer.style.display = 'none';
+    errorContainer.style.display = 'none';
 }
 
-// Скрыть loading
+// Hide loading indicator
 function hideLoading() {
-  loading.classList.remove('active');
-  createBtn.disabled = false;
+    loading.style.display = 'none';
 }
 
-// Показать результат
+// Show result
 function showResult(imageData) {
-  resultImage.src = imageData;
-  resultSection.classList.add('active');
-  emptyState.classList.add('hidden');
-  hideLoading();
+    resultImage.src = imageData;
+    resultContainer.style.display = 'block';
+    errorContainer.style.display = 'none';
+    hideLoading();
 }
 
-// Показать empty state
-function showEmptyState() {
-  emptyState.classList.remove('hidden');
-  resultSection.classList.remove('active');
-  hideLoading();
+// Show error
+function showError(message) {
+    errorMessage.textContent = message;
+    errorContainer.style.display = 'block';
+    resultContainer.style.display = 'none';
+    hideLoading();
 }
 
-// Сброс формы
-function resetForm() {
-  descriptionInput.value = '';
-  showEmptyState();
-  descriptionInput.focus();
-}
+// Generate image
+async function generateImage() {
+    const prompt = promptInput.value.trim();
 
-// Генерация существа
-createBtn.onclick = async () => {
-  const description = descriptionInput.value.trim();
-
-  if (!description) {
-    tg.showAlert('Напиши, кто это 🙂');
-    descriptionInput.focus();
-    return;
-  }
-
-  if (isGenerating) return;
-  isGenerating = true;
-
-  showLoading();
-
-  try {
-    console.log('Отправляю запрос:', description);
-    
-    const res = await fetch('/api/generate-creature', {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json'
-      },
-      body: JSON.stringify({ description })
-    });
-
-    console.log('Статус ответа:', res.status);
-
-    if (!res.ok) {
-      const errorText = await res.text();
-      console.error('Ошибка сервера:', errorText);
-      throw new Error(`Сервер вернул ${res.status}`);
+    if (!prompt) {
+        showError('Введите промт для генерации');
+        return;
     }
 
-    const data = await res.json();
-    console.log('Получен ответ, длина image:', data.image?.length);
-    
-    if (!data.image || !data.image.startsWith('data:image')) {
-      throw new Error('Неверный формат изображения');
+    if (isGenerating) return;
+    isGenerating = true;
+
+    showLoading();
+
+    try {
+        const response = await fetch('/api/generate-image', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({ description: prompt })
+        });
+
+        const data = await response.json();
+        
+        if (!response.ok) {
+            throw new Error(data.error || 'Неизвестная ошибка');
+        }
+
+        if (!data.image || typeof data.image !== 'string') {
+            throw new Error('Некорректный ответ сервера');
+        }
+
+        showResult(data.image);
+    } catch (error) {
+        console.error('Ошибка генерации:', error);
+        showError(error.message);
+    } finally {
+        isGenerating = false;
     }
-    
-    showResult(data.image);
-    tg.HapticFeedback.notificationOccurred('success');
+}
 
-  } catch (e) {
-    console.error('Ошибка генерации:', e);
-    tg.showAlert(`Ошибка: ${e.message} 😢`);
-    tg.HapticFeedback.notificationOccurred('error');
-    showEmptyState();
-  } finally {
-    isGenerating = false;
-  }
-};
-
-// Кнопка "Покормить"
-feedBtn.onclick = () => {
-  tg.showAlert('Ням-ням! 🥕 (Функция в разработке)');
-  tg.HapticFeedback.impactOccurred('light');
-};
-
-// Кнопка "Создать ещё"
-newBtn.onclick = () => {
-  resetForm();
-  tg.HapticFeedback.impactOccurred('light');
-};
-
-// Enter для отправки
-descriptionInput.addEventListener('keypress', (e) => {
-  if (e.key === 'Enter') {
-    createBtn.click();
-  }
+// Event listeners
+generateBtn.addEventListener('click', generateImage);
+promptInput.addEventListener('keypress', (e) => {
+    if (e.key === 'Enter') {
+        generateImage();
+    }
 });
